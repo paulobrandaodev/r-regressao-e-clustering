@@ -2,19 +2,48 @@
 title: "Trabalho Final"
 author: "Paulo Brandão/Gabriel Victor"
 date: '2022-06-27'
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Set Local
+```{r setlocal}
+getwd()
+setwd('C:/Users/paulo.brandao/Downloads/regressao-e-clustering-r')
+```
 
+## Install Libs
+```{r install}
+install.packages("readr")
+library(readr)
 
+install.packages("dplyr")
+library(dplyr)
 
-```{r cars}
-summary(cars)
+install.packages("ggplot2")
+library(ggplot2)
+
+install.packages("RColorBrewer")
+library(RColorBrewer)
+```
+
+## Usando o data.frame
+
+> Importamos os dados
+
+```{r vendasonline, include=FALSE}
+vendasonline <- readr::read_csv2('online_retail_II.csv')
+```
+
+> Vemos uma amostra das informaçoes disponíveis
+
+```{r vendasonlineview}
+head(vendasonline)
 ```
 
 ## Including Plots
@@ -22,7 +51,7 @@ summary(cars)
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+plot(vendasonline$Quantity)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
