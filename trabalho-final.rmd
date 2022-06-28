@@ -43,7 +43,8 @@ Removemos os NA's e convertemos a coluna *Customer ID* para char
 
 ```{r vendas_parse, message=FALSE}
 vendas_sem_na = na.omit(vendas) %>% 
-  mutate(`Customer ID` = as.character(`Customer ID`))
+  mutate(`Customer ID` = as.character(`Customer ID`)) %>% 
+  rename(., `CustomerID` = `Customer ID`)
 head(vendas_sem_na)
 ```
 
@@ -54,15 +55,47 @@ Adicionamos a biblioteca
 ```{r random_forest_lib_add}
   library(randomForest)
   require(caTools)
+  
+  library(rpart)
+  library(rpart.plot)
 ```
 
-Geramos a floresta aleatória:
-```{r random_forest_generate}
-  sample = split(vendas_sem_na$Quantity)
-  train = subset(vendas_sem_na, sample == TRUE)
-  test  = subset(vendas_sem_na, sample == FALSE)
-  dim(train)
-  dim(test)
+Geramos o cálculo de entropia:
+```{r entropia}
+  dados <- vendas_sem_na
+
+  set.seed(1234)
+  index  <- sample.int(nrow(dados), 0.8 * nrow(dados))
+  treino <- dados[index,]
+  teste  <- dados[-index,]
+  vendas_sem_na %>% names()
+  
+  mod1 <- rpart(Quantity ~ Price + Description + Country, data = treino)
+  mod2 <- rpart(Quantity ~., data = treino)
+  
+  rpart.plot(mod1)
 ```
+
+
+```{r random_forest_generate_2}
+
+data <- vendas_sem_na
+
+sample = sample.split(data$Quantity, SplitRatio = .75)
+train = subset(data, sample == TRUE)
+test  = subset(data, sample == FALSE)
+
+dim(train)
+dim(test)
+```
+
+Inicializamos a classe RandomForest
+
+```{r random_forest_initialize}
+  model1 <- randomForest(Quantity ~ ., data = train, importance = TRUE, ntree = 10)
+```
+
+
+
 
 ## Clusterização
