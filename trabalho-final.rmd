@@ -93,9 +93,43 @@ Inicializamos a classe RandomForest
 
 ```{r random_forest_initialize}
   model1 <- randomForest(Quantity ~ ., data = train, importance = TRUE, ntree = 10)
+  plot(model1)
 ```
 
 
 
 
 ## Clusterização
+
+```{r loadlibcluster}
+# Loading package
+library(ClusterR)
+library(cluster)
+```
+
+```{r cluster}
+
+dados <- vendas_sem_na
+dados <- subset(dados, select = c(Price, Quantity))
+
+
+set.seed(240) # Setting seed
+kmeans.re <- kmeans(dados, centers = 3, nstart = 20)
+```
+
+```{r defineclusters}
+
+vendas_cluster <- kmeans.re
+head(vendas_cluster)
+
+```
+
+```{r plot clusters}
+
+ggplot() +
+  geom_point(data = vendas_cluster$cluster, 
+             mapping = aes(x = vendas_cluster$center.Price, 
+                                  y = vendas_cluster$center.Quantity, 
+                                  colour = cluster))
+```
+
