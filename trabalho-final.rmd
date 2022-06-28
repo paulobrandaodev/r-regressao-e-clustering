@@ -91,6 +91,8 @@ Dividimos os dados:
   
   train = floresta_fogo[ind,]
   test  = floresta_fogo[-ind,]
+  View(test)
+  View(train)
 ```
 
 Treinamos o modelo e plotamos no final
@@ -101,9 +103,17 @@ Treinamos o modelo e plotamos no final
     y = train$Classes,
     xtest = test[,-14],
     ytest = test$Classes,
-    Classes ~ ., data = train, importance = TRUE, ntree = 10
+    data = train, 
+    importance = TRUE,
+    ntree = 50,
+    keep.forest = T,
+    mtry = 10,
+    nodesize = 10,
+    maxnode = 14
     )
   plot(model1)
+  getTree(model1,1)
+  varImpPlot(model1)
 ```
 
 
