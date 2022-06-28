@@ -45,7 +45,6 @@ Removemos os NA's
   floresta_fogo = floresta_fogo %>% 
   mutate(Classes = recode(Classes, "fire" = 1, "not fire" = 0)) %>% 
   na.omit(floresta_fogo$Classes)
-
 ```
 
 Trocamos os tipos das colunas
@@ -91,6 +90,8 @@ Dividimos os dados:
   
   train = floresta_fogo[ind,]
   test  = floresta_fogo[-ind,]
+  View(test)
+  View(train)
 ```
 
 Treinamos o modelo e plotamos no final
@@ -101,9 +102,17 @@ Treinamos o modelo e plotamos no final
     y = train$Classes,
     xtest = test[,-14],
     ytest = test$Classes,
-    Classes ~ ., data = train, importance = TRUE, ntree = 10
+    data = train, 
+    importance = TRUE,
+    ntree = 50,
+    keep.forest = T,
+    mtry = 10,
+    nodesize = 10,
+    maxnode = 14
     )
   plot(model1)
+  getTree(model1,1)
+  varImpPlot(model1)
 ```
 
 
@@ -118,29 +127,34 @@ library(cluster)
 ```
 
 ```{r cluster}
-
-dados <- vendas_sem_na
-dados <- subset(dados, select = c(Price, Quantity))
-
-
-set.seed(240) # Setting seed
-kmeans.re <- kmeans(dados, centers = 3, nstart = 20)
+  dados <- floresta_fogo
+  dados <- subset(dados, select = c(Temperature, Rain, RH))
+  
+  
+  set.seed(240) # Setting seed
+  cls <- kmeans(dados, centers = 3, nstart = 20)
 ```
 
 ```{r defineclusters}
-
-vendas_cluster <- kmeans.re
-head(vendas_cluster)
-
+  dados$cluster <- as.character(cls$cluster)
+  head(cls)
 ```
 
 ```{r plot clusters}
 
 ggplot() +
-  geom_point(data = vendas_cluster$cluster, 
-             mapping = aes(x = vendas_cluster$center.Price, 
-                                  y = vendas_cluster$center.Quantity, 
-                                  colour = cluster))
+  geom_point(data = dados, 
+             mapping = aes(x = Temperature, 
+                                  y = Rain, 
+                                  colour = cluster))+
+  geom_point(mapping = aes_string(x = cls$centers[, "Temperature"], 
+                                  y = cls$centers[, "Rain"]),
+                                  color = "red", size = 4) +
+  geom_text(mapping = aes_string(x = cls$centers[, "Temperature"], 
+                                  y = cls$centers[, "Rain"],
+                                 label = 1:3),
+                                  color = "black", size = 4) +
+  theme_light()
 ```
 
 
