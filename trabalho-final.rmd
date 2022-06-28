@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Set Local
 ```{r setlocal}
-setwd('C:/Users/gabri/OneDrive/Documentos/projetoR/r-regressao-e-clustering')
+setwd('C:/Users/paulo.brandao/Downloads/regressao-e-clustering-r')
 getwd()
 ```
 
@@ -30,23 +30,45 @@ library(RColorBrewer)
 Importamos os dados
 
 ```{r vendasonline, message=FALSE}
-vendas <- readr::read_csv2('online_retail_II.csv')
+  floresta_fogo <- readr::read_csv('forest_fires.csv')
 ```
 
 Vemos uma amostra das informaçoes disponíveis
 
 ```{r vendasonlineview}
-head(vendas)
+  head(floresta_fogo)
 ```
 
-Removemos os NA's e convertemos a coluna *Customer ID* para char
+Removemos os NA's
 
 ```{r vendas_parse, message=FALSE}
-vendas_sem_na = na.omit(vendas) %>% 
-  mutate(`Customer ID` = as.character(`Customer ID`)) %>% 
-  rename(., `CustomerID` = `Customer ID`)
-head(vendas_sem_na)
+  floresta_fogo = floresta_fogo %>% 
+  mutate(Classes = recode(Classes, "fire" = 1, "not fire" = 0)) %>% 
+  na.omit(floresta_fogo$Classes)
+
 ```
+
+Trocamos os tipos das colunas
+
+```{r trocartiposdascolunas}
+
+  floresta_fogo$Temperature <- as.numeric(as.character(floresta_fogo$Temperature))
+  floresta_fogo$RH <- as.numeric(as.character(floresta_fogo$RH))
+  floresta_fogo$Ws <- as.numeric(as.character(floresta_fogo$Ws))
+  floresta_fogo$Rain <- as.numeric(as.character(floresta_fogo$Rain))
+  floresta_fogo$FFMC <- as.numeric(as.character(floresta_fogo$FFMC))
+  floresta_fogo$DMC <- as.numeric(as.character(floresta_fogo$DMC))
+  floresta_fogo$DC <- as.numeric(as.character(floresta_fogo$DC))
+  floresta_fogo$ISI <- as.numeric(as.character(floresta_fogo$ISI))
+  floresta_fogo$BUI <- as.numeric(as.character(floresta_fogo$BUI))
+  floresta_fogo$FWI <- as.numeric(as.character(floresta_fogo$FWI))
+  floresta_fogo$day <- as.numeric(as.character(floresta_fogo$day))
+  floresta_fogo$month <- as.numeric(as.character(floresta_fogo$month))
+  floresta_fogo$year <- as.numeric(as.character(floresta_fogo$year))
+  
+  head(floresta_fogo)
+```
+
 
 > Random Forest
 
@@ -58,58 +80,22 @@ Adicionamos a biblioteca
   
   library(rpart)
   library(rpart.plot)
-```
-
-Geramos o cálculo de entropia:
-```{r entropia}
-  dados <- vendas_sem_na
-
-  set.seed(1234)
-  index  <- sample.int(nrow(dados), 0.8 * nrow(dados))
-  treino <- dados[index,]
-  teste  <- dados[-index,]
-  vendas_sem_na %>% names()
-  
-  mod1 <- rpart(Quantity ~ Price + Description + Country, data = treino)
-  mod2 <- rpart(Quantity ~., data = treino)
-  
-  rpart.plot(mod1)
-```
-
-
-```{r random_forest_generate_2}
-
-data <- vendas_sem_na
-
-sample = sample.split(data$Quantity, SplitRatio = .75)
-train = subset(data, sample == TRUE)
-test  = subset(data, sample == FALSE)
-
-dim(train)
-dim(test)
-```
-
-Inicializamos a classe RandomForest
-
-```{r random_forest_initialize}
-
   require("caret")
+```
 
-
-  floresta_fogo <- readr::read_csv('forest_fires.csv')
-
-  floresta_fogo = floresta_fogo %>% 
-  mutate(Classes = recode(Classes, "fire" = 1, "not fire" = 0)) %>% 
-  na.omit(floresta_fogo$Classes)
-
+Dividimos os dados:
+```{r entropia}
   floresta_fogo<-floresta_fogo[!(floresta_fogo$day=="day" | floresta_fogo$day=="Sidi-Bel Abbes Region Dataset"),]
-
   
   ind = createDataPartition(floresta_fogo$Classes,p = 0.8, 1, list = F)
   
   train = floresta_fogo[ind,]
   test  = floresta_fogo[-ind,]
- 
+```
+
+Treinamos o modelo e plotamos no final
+
+```{r random_forest_generate_2}
   model1 <- randomForest(
     x = train[,-14],
     y = train$Classes,
@@ -156,4 +142,6 @@ ggplot() +
                                   y = vendas_cluster$center.Quantity, 
                                   colour = cluster))
 ```
+
+
 
