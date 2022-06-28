@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Set Local
 ```{r setlocal}
-setwd('C:/Users/paulo.brandao/Downloads/regressao-e-clustering-r')
+setwd('C:/Users/logonrmlocal/Downloads/r-regressao-e-clustering-main')
 getwd()
 ```
 
@@ -23,6 +23,7 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
+library(e1071)
 ```
 
 ## Análise exploratória
@@ -44,7 +45,8 @@ Removemos os NA's
 ```{r vendas_parse, message=FALSE}
   floresta_fogo = floresta_fogo %>% 
   mutate(Classes = recode(Classes, "fire" = 1, "not fire" = 0)) %>% 
-  na.omit(floresta_fogo$Classes)
+  na.omit(floresta_fogo$Classes) %>% 
+  mutate(Classes = factor(Classes))
 ```
 
 Trocamos os tipos das colunas
@@ -68,6 +70,37 @@ Trocamos os tipos das colunas
   head(floresta_fogo)
 ```
 
+> Buscamos outliers
+
+```{r outliers}
+floresta_fogo %>% 
+ggplot() +
+  geom_boxplot(aes(x = ISI, y = FFMC))
+```
+Removendo os outliers por Quartis
+
+```{r remove_outliers}
+data = floresta_fogo;
+
+Q1 <- quantile(data$FFMC, .25)
+Q3 <- quantile(data$FFMC, .75)
+IQR <- IQR(data$FFMC)
+
+no_outliers <- subset(data, data$FFMC > (Q1 - 1.5*IQR) & data$FFMC < (Q3 + 1.5*IQR))
+dim(no_outliers)
+
+
+floresta_fogo = no_outliers
+
+```
+Verificamos se houveram mudanças
+
+```{r outliers_clean}
+floresta_fogo %>% 
+ggplot() +
+  geom_boxplot(aes(x = ISI, y = FFMC))
+```
+
 
 > Random Forest
 
@@ -79,7 +112,7 @@ Adicionamos a biblioteca
   
   library(rpart)
   library(rpart.plot)
-  require("caret")
+  library(caret)
 ```
 
 Dividimos os dados:
@@ -90,13 +123,12 @@ Dividimos os dados:
   
   train = floresta_fogo[ind,]
   test  = floresta_fogo[-ind,]
-  View(test)
-  View(train)
 ```
 
 Treinamos o modelo e plotamos no final
 
 ```{r random_forest_generate_2}
+  set.seed(240)
   model1 <- randomForest(
     x = train[,-14],
     y = train$Classes,
@@ -104,7 +136,7 @@ Treinamos o modelo e plotamos no final
     ytest = test$Classes,
     data = train, 
     importance = TRUE,
-    ntree = 50,
+    ntree = 500,
     keep.forest = T,
     mtry = 10,
     nodesize = 10,
@@ -113,6 +145,18 @@ Treinamos o modelo e plotamos no final
   plot(model1)
   getTree(model1,1)
   varImpPlot(model1)
+```
+
+Fazemos as previsões de um incêndio
+
+```{r predict}
+train$y <- predict(model1, train, type="class")
+```
+
+
+Colocamos na Matriz de Confusão
+```{r matrix}
+confusionMatrix(train$y, train$Classes)
 ```
 
 
@@ -128,7 +172,8 @@ library(cluster)
 
 ```{r cluster}
   dados <- floresta_fogo
-  dados <- subset(dados, select = c(Temperature, Rain, RH))
+  head(floresta_fogo)
+  dados <- subset(dados, select = c(ISI, FFMC, FWI))
   
   
   set.seed(240) # Setting seed
@@ -144,14 +189,14 @@ library(cluster)
 
 ggplot() +
   geom_point(data = dados, 
-             mapping = aes(x = Temperature, 
-                                  y = Rain, 
+             mapping = aes(x = ISI, 
+                                  y = FFMC, 
                                   colour = cluster))+
-  geom_point(mapping = aes_string(x = cls$centers[, "Temperature"], 
-                                  y = cls$centers[, "Rain"]),
+  geom_point(mapping = aes_string(x = cls$centers[, "ISI"], 
+                                  y = cls$centers[, "FFMC"]),
                                   color = "red", size = 4) +
-  geom_text(mapping = aes_string(x = cls$centers[, "Temperature"], 
-                                  y = cls$centers[, "Rain"],
+  geom_text(mapping = aes_string(x = cls$centers[, "ISI"], 
+                                  y = cls$centers[, "FFMC"],
                                  label = 1:3),
                                   color = "black", size = 4) +
   theme_light()
