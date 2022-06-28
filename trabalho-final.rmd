@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Set Local
 ```{r setlocal}
-setwd('C:/Users/paulo/Downloads/r-regressao-e-clustering')
+setwd('C:/Users/gabri/OneDrive/Documentos/projetoR/r-regressao-e-clustering')
 getwd()
 ```
 
@@ -92,7 +92,31 @@ dim(test)
 Inicializamos a classe RandomForest
 
 ```{r random_forest_initialize}
-  model1 <- randomForest(Quantity ~ ., data = train, importance = TRUE, ntree = 10)
+
+  require("caret")
+
+
+  floresta_fogo <- readr::read_csv('forest_fires.csv')
+
+  floresta_fogo = floresta_fogo %>% 
+  mutate(Classes = recode(Classes, "fire" = 1, "not fire" = 0)) %>% 
+  na.omit(floresta_fogo$Classes)
+
+  floresta_fogo<-floresta_fogo[!(floresta_fogo$day=="day" | floresta_fogo$day=="Sidi-Bel Abbes Region Dataset"),]
+
+  
+  ind = createDataPartition(floresta_fogo$Classes,p = 0.8, 1, list = F)
+  
+  train = floresta_fogo[ind,]
+  test  = floresta_fogo[-ind,]
+ 
+  model1 <- randomForest(
+    x = train[,-14],
+    y = train$Classes,
+    xtest = test[,-14],
+    ytest = test$Classes,
+    Classes ~ ., data = train, importance = TRUE, ntree = 10
+    )
   plot(model1)
 ```
 
